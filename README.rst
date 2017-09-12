@@ -15,15 +15,79 @@ The hook is integrated into a Condor config file to perform the following workfl
 
 To integrate the hook, use the ``include command`` syntax in any HTCondor config file:
 
-.. code::
+.. code:: python
 
     include command : condor-git-config https://git.mydomain.com/condor-repos/condor-configs.git
 
 Usage Notes
 ###########
 
+The hook requires at least Python 3.3 to run.
+
 Installation
 ------------
 
+Installation provides the ``condor-git-config`` executable.
+All other dependencies are installed automatically.
 
+Stable release version
 
+.. code:: bash
+
+    pip3 install condor_git_config
+
+Current development version
+
+.. code:: bash
+
+    git clone https://github.com/maxfischer2781/condor-git-config.git
+    ./condor-git-config/setup.py install
+
+Argument Files
+--------------
+
+The ``condor-git-config`` executable can use the ``@`` [prefix character](https://docs.python.org/3/library/argparse.html#fromfile-prefix-chars)
+to read arguments from files.
+This allows you to prepare options externally
+
+.. code::
+
+    echo "hostname -d" >> /etc/mycloud/domain
+
+and have them used dynamically to adjust configuration
+
+.. code::
+
+    include command : condor-git-config --branch @/etc/mycloud/domain https://git.mydomain.com/condor-repos/condor-configs.git
+
+Configuration Recursion
+-----------------------
+
+By default, ``condor-git-config`` will not recurse into sub-directories.
+This allows you to have additional configuration, which is conditionally integrated.
+For example, consider the following git repository tree:
+
+.. code::
+
+    |- commong.cfg
+    |- security.cfg
+    |- aaaron-cloud.cfg
+    |- aaaron-cloud/
+    |  |- overwrites.cfg
+    |  |- proxy.cfg
+    |- beebee-cloud.cfg
+
+The ``aaaron-cloud`` folder will be ignored by default.
+You can conditionally include the ``*-cloud.cfg`` files like this:
+
+.. code::
+
+    --blacklist '-cloud\.cfg' --whitelist @/etc/mycloud/flavour
+
+This allows you to further include the files in ``aaaron-cloud`` by using ``include`` in ``aaaron-cloud.cfg``:
+
+.. code::
+
+    # aaaron-cloud.cfg
+    include : $(GIT_CONFIG_CACHE_PATH)/overwrites.cfg
+    include : $(GIT_CONFIG_CACHE_PATH)/proxy.cfg
