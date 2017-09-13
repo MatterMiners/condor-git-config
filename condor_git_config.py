@@ -10,6 +10,7 @@ import functools
 import re
 import random
 import filelock
+import zlib
 
 
 # fix argparse help output -- https://bugs.python.org/issue13041
@@ -91,7 +92,9 @@ class ConfigCache(object):
         self.cache_path = cache_path
         self.max_age = max_age
         self._meta_file = self._abspath('.cache.ast')
-        self._cache_lock = filelock.FileLock(self._abspath('.cache.lock'))
+        self._cache_lock = filelock.FileLock(
+            os.path.join('/tmp', '.cache.%s.lock' % zlib.adler32(os.path.basename(__file__).encode()))
+        )
         os.makedirs(self.cache_path, exist_ok=True, mode=0o755)
 
     def _abspath(self, *rel_paths):
