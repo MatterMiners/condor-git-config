@@ -52,13 +52,13 @@ This allows you to prepare options externally
 
 .. code::
 
-    echo "hostname -d" >> /etc/mycloud/domain
+    echo $(hostname -d) >> /etc/mycloud/domain
 
 and have them used dynamically to adjust configuration
 
 .. code::
 
-    include command : condor-git-config --branch @/etc/mycloud/domain https://git.mydomain.com/condor-repos/condor-configs.git
+    include command : condor-git-config --branch @/etc/mycloud/domain -- https://git.mydomain.com/condor-repos/condor-configs.git
 
 Configuration Recursion
 -----------------------
@@ -82,7 +82,7 @@ You can conditionally include the ``*-cloud.cfg`` files like this:
 
 .. code::
 
-    --blacklist '-cloud\.cfg' --whitelist @/etc/mycloud/flavour
+    --blacklist '.-cloud\.cfg' --whitelist @/etc/mycloud/flavour
 
 This allows you to further include the files in ``aaaron-cloud`` by using ``include`` in ``aaaron-cloud.cfg``:
 
