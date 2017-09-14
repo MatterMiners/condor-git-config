@@ -14,10 +14,12 @@ import zlib
 
 
 try:
-    # fix argparse help output -- https://bugs.python.org/issue13041
-    os.environ.setdefault('COLUMNS', str(os.get_terminal_size().columns))
+    display_columns = os.get_terminal_size().columns
 except OSError:
-    pass
+    display_columns = 80
+else:
+    # fix argparse help output -- https://bugs.python.org/issue13041
+    os.environ.setdefault('COLUMNS', str(display_columns))
 
 
 CLI = argparse.ArgumentParser(
@@ -25,7 +27,7 @@ CLI = argparse.ArgumentParser(
     fromfile_prefix_chars='@',
     formatter_class=functools.partial(
         argparse.ArgumentDefaultsHelpFormatter,
-        max_help_position=max(24, int(0.3 * os.get_terminal_size().columns))
+        max_help_position=max(24, int(0.3 * display_columns))
     ),
 )
 CLI_SOURCE = CLI.add_argument_group('source of configuration files')
