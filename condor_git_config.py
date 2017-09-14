@@ -13,8 +13,11 @@ import filelock
 import zlib
 
 
-# fix argparse help output -- https://bugs.python.org/issue13041
-os.environ.setdefault('COLUMNS', str(os.get_terminal_size().columns))
+try:
+    # fix argparse help output -- https://bugs.python.org/issue13041
+    os.environ.setdefault('COLUMNS', str(os.get_terminal_size().columns))
+except OSError:
+    pass
 
 
 CLI = argparse.ArgumentParser(
