@@ -50,7 +50,7 @@ Current development version
 Argument Files
 --------------
 
-The ``condor-git-config`` executable can use the ``@`` [prefix character](https://docs.python.org/3/library/argparse.html#fromfile-prefix-chars)
+The ``condor-git-config`` executable can use the ``@`` `prefix character <https://docs.python.org/3/library/argparse.html#fromfile-prefix-chars>`_
 to read arguments from files.
 This allows you to prepare options externally
 
