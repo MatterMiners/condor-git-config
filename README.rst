@@ -19,6 +19,10 @@ To integrate the hook, use the ``include command`` syntax in any HTCondor config
 
     include command : condor-git-config https://git.mydomain.com/condor-repos/condor-configs.git
 
+.. note::  Any arguments in ``include command`` are passed directly to the program, without evoking a shell.
+           This means that escapes and quotes required for passing arguments on the shell must **not**
+           be used in the configuration.
+
 Usage Notes
 ###########
 
