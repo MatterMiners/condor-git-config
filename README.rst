@@ -26,7 +26,7 @@ To integrate the hook, use the ``include command`` syntax in any HTCondor config
 Usage Notes
 ###########
 
-The hook requires at least Python 3.3 to run.
+The hook requires at least Python 3.3 to run. A list of options is available by passing ``-h`` or ``--help`` to the executable.
 
 Installation
 ------------
