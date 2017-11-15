@@ -15,7 +15,7 @@ The hook is integrated into a Condor config file to perform the following workfl
 
 To integrate the hook, use the ``include command`` syntax in any HTCondor config file:
 
-.. code:: python
+.. code::
 
     include command : condor-git-config https://git.mydomain.com/condor-repos/condor-configs.git
 
@@ -50,11 +50,12 @@ Current development version
 Argument Files
 --------------
 
-The ``condor-git-config`` executable can use the ``@`` `prefix character <https://docs.python.org/3/library/argparse.html#fromfile-prefix-chars>`_
+The ``condor-git-config`` executable can use the ``@``
+`prefix character <https://docs.python.org/3/library/argparse.html#fromfile-prefix-chars>`_
 to read arguments from files.
 This allows you to prepare options externally
 
-.. code::
+.. code:: bash
 
     echo $(hostname -d) >> /etc/mycloud/domain
 
@@ -84,7 +85,7 @@ For example, consider the following git repository tree:
 The ``aaaron-cloud`` folder will be ignored by default.
 You can conditionally include the ``*-cloud.cfg`` files like this:
 
-.. code::
+.. code:: bash
 
     --blacklist '.-cloud\.cfg' --whitelist @/etc/mycloud/flavour
 
