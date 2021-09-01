@@ -97,7 +97,7 @@ class ConfigCache(object):
         self.cache_path = cache_path
         self.max_age = max_age
         self._work_path = os.path.abspath(os.path.join(cache_path, branch))
-        self._meta_file = self.abspath('.cache.ast')
+        self._meta_file = self.abspath('cache.json')
         self._cache_lock = filelock.FileLock(
             os.path.join('/tmp', '.cache.%s.lock' % zlib.adler32(os.path.basename(__file__).encode()))
         )
@@ -118,8 +118,8 @@ class ConfigCache(object):
         return False
 
     def __iter__(self):
-        # avoid duplicates from links, and exclude our own internal files
-        seen = {'.cache.ast'}
+        # avoid duplicates from links
+        seen = set()
         repo_path = self.repo_path()
         for dir_path, dir_names, file_names in os.walk(repo_path):
             if '.git' in dir_names:
@@ -148,7 +148,7 @@ class ConfigCache(object):
 
     def _update_metadata(self):
         with open(self._meta_file, 'w') as raw_meta:
-            raw_meta.write({'git_uri': self.git_uri, 'branch': self.branch, 'timestamp': time.time()})
+            json.dump({'git_uri': self.git_uri, 'branch': self.branch, 'timestamp': time.time()}, raw_meta)
 
     def refresh(self):
         if not self.outdated:
@@ -167,6 +167,7 @@ class ConfigCache(object):
                 cwd=repo_path,
                 universal_newlines=True
             )
+        self._update_metadata()
 
 
 class ConfigSelector(object):
