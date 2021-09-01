@@ -106,6 +106,9 @@ class ConfigCache(object):
     def abspath(self, *rel_paths):
         return os.path.abspath(os.path.join(self._work_path, *rel_paths))
 
+    def repo_path(self, *rel_paths):
+        return self.abspath('repo', *rel_paths)
+
     def __enter__(self):
         self._cache_lock.acquire()
         return self
@@ -117,12 +120,13 @@ class ConfigCache(object):
     def __iter__(self):
         # avoid duplicates from links, and exclude our own internal files
         seen = {'.cache.ast'}
-        for dir_path, dir_names, file_names in os.walk(self._work_path):
+        repo_path = self.repo_path()
+        for dir_path, dir_names, file_names in os.walk(repo_path):
             if '.git' in dir_names:
                 dir_names.remove('.git')
             dir_names[:] = sorted(dir_names)
             for file_name in sorted(file_names):
-                rel_path = os.path.normpath(os.path.relpath(os.path.join(dir_path, file_name), self._work_path))
+                rel_path = os.path.normpath(os.path.relpath(os.path.join(dir_path, file_name), repo_path))
                 if rel_path in seen:
                     continue
                 seen.add(rel_path)
@@ -149,18 +153,18 @@ class ConfigCache(object):
     def refresh(self):
         if not self.outdated:
             return
-        if not os.path.exists(os.path.join(self._work_path, '.git')):
+        repo_path = self.repo_path()
+        if not os.path.exists(os.path.join(repo_path, '.git')):
             subprocess.check_output(
-                ['git', 'clone', '--quiet', '--branch', str(self.branch), str(self.git_uri), str(self._work_path)],
+                ['git', 'clone', '--quiet', '--branch', str(self.branch), str(self.git_uri), repo_path],
                 timeout=30,
-                cwd=self._work_path,
                 universal_newlines=True,
             )
         else:
             subprocess.check_output(
                 ['git', 'pull'],
                 timeout=30,
-                cwd=self._work_path,
+                cwd=repo_path,
                 universal_newlines=True
             )
 
@@ -187,7 +191,7 @@ class ConfigSelector(object):
                 continue
             if self.pattern.search(rel_path):
                 if not self.blacklist.search(rel_path) or self.whitelist.search(rel_path):
-                    yield config_cache.abspath(rel_path)
+                    yield config_cache.repo_path(rel_path)
 
 
 def include_configs(path_key, config_cache, config_selector, destination=sys.stdout):
