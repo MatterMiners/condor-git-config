@@ -5,7 +5,7 @@ import argparse
 import logging
 import subprocess
 import time
-import ast
+import json
 import functools
 import re
 import random
@@ -96,14 +96,18 @@ class ConfigCache(object):
         self.branch = branch
         self.cache_path = cache_path
         self.max_age = max_age
-        self._meta_file = self._abspath('.cache.ast')
+        self._work_path = os.path.abspath(os.path.join(cache_path, branch))
+        self._meta_file = self.abspath('cache.json')
         self._cache_lock = filelock.FileLock(
             os.path.join('/tmp', '.cache.%s.lock' % zlib.adler32(os.path.basename(__file__).encode()))
         )
-        os.makedirs(self.cache_path, exist_ok=True, mode=0o755)
+        os.makedirs(self._work_path, exist_ok=True, mode=0o755)
 
-    def _abspath(self, *rel_paths):
-        return os.path.abspath(os.path.join(self.cache_path, *rel_paths))
+    def abspath(self, *rel_paths):
+        return os.path.abspath(os.path.join(self._work_path, *rel_paths))
+
+    def repo_path(self, *rel_paths):
+        return self.abspath('repo', *rel_paths)
 
     def __enter__(self):
         self._cache_lock.acquire()
@@ -114,14 +118,15 @@ class ConfigCache(object):
         return False
 
     def __iter__(self):
-        # avoid duplicates from links, and exclude our own internal files
-        seen = {'.cache.ast'}
-        for dir_path, dir_names, file_names in os.walk(self.cache_path):
+        # avoid duplicates from links
+        seen = set()
+        repo_path = self.repo_path()
+        for dir_path, dir_names, file_names in os.walk(repo_path):
             if '.git' in dir_names:
                 dir_names.remove('.git')
             dir_names[:] = sorted(dir_names)
             for file_name in sorted(file_names):
-                rel_path = os.path.normpath(os.path.relpath(os.path.join(dir_path, file_name), self.cache_path))
+                rel_path = os.path.normpath(os.path.relpath(os.path.join(dir_path, file_name), repo_path))
                 if rel_path in seen:
                     continue
                 seen.add(rel_path)
@@ -131,7 +136,7 @@ class ConfigCache(object):
     def outdated(self):
         try:
             with open(self._meta_file, 'r') as raw_meta:
-                meta_data = ast.literal_eval(''.join(raw_meta))
+                meta_data = json.load(raw_meta)
         except FileNotFoundError:
             return True
         else:
@@ -143,25 +148,26 @@ class ConfigCache(object):
 
     def _update_metadata(self):
         with open(self._meta_file, 'w') as raw_meta:
-            raw_meta.write({'git_uri': self.git_uri, 'branch': self.branch, 'timestamp': time.time()})
+            json.dump({'git_uri': self.git_uri, 'branch': self.branch, 'timestamp': time.time()}, raw_meta)
 
     def refresh(self):
         if not self.outdated:
             return
-        if not os.path.exists(os.path.join(self.cache_path, '.git')):
+        repo_path = self.repo_path()
+        if not os.path.exists(os.path.join(repo_path, '.git')):
             subprocess.check_output(
-                ['git', 'clone', '--quiet', '--branch', str(self.branch), str(self.git_uri), str(self.cache_path)],
+                ['git', 'clone', '--quiet', '--branch', str(self.branch), str(self.git_uri), repo_path],
                 timeout=30,
-                cwd=self.cache_path,
                 universal_newlines=True,
             )
         else:
             subprocess.check_output(
                 ['git', 'pull'],
                 timeout=30,
-                cwd=self.cache_path,
+                cwd=repo_path,
                 universal_newlines=True
             )
+        self._update_metadata()
 
 
 class ConfigSelector(object):
@@ -186,7 +192,7 @@ class ConfigSelector(object):
                 continue
             if self.pattern.search(rel_path):
                 if not self.blacklist.search(rel_path) or self.whitelist.search(rel_path):
-                    yield os.path.join(config_cache.cache_path, rel_path)
+                    yield config_cache.repo_path(rel_path)
 
 
 def include_configs(path_key, config_cache, config_selector, destination=sys.stdout):

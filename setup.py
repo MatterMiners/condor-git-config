@@ -6,7 +6,7 @@ repo_base_dir = os.path.abspath(os.path.dirname(__file__))
 # pull in the packages metadata
 package_about = {
     '__title__': 'condor_git_config',
-    '__version__': '0.1.0',
+    '__version__': '0.1.1',
     '__summary__': 'dynamically configure an HTCondor node from a git repository',
     '__author__': 'Max Fischer',
     '__email__': 'maxfischer2781@gmail.com',
