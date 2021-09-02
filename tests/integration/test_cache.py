@@ -5,7 +5,7 @@ import pathlib
 import sys
 
 
-REPO_URL = "git@github.com:MatterMiners/condor-git-config.git"
+REPO_URL = "https://github.com/MatterMiners/condor-git-config.git"
 EXECUTABLE = [shutil.which("condor-git-config")]
 if EXECUTABLE[0] is None:
     EXECUTABLE = [
