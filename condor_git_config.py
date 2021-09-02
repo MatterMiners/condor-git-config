@@ -198,7 +198,7 @@ class ConfigSelector(object):
 def include_configs(path_key, config_cache, config_selector, destination=sys.stdout):
     with config_cache:
         config_cache.refresh()
-        print('%s = %s' % (path_key, config_cache.cache_path), file=destination)
+        print('%s = %s' % (path_key, config_cache.repo_path()), file=destination)
         for config_path in config_selector.get_paths(config_cache):
             print('include : %s' % config_path, file=destination)
 
