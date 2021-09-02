@@ -49,8 +49,7 @@ if __name__ == '__main__':
             'Programming Language :: Python :: 3.6',
         ],
         keywords='htcondor condor configuration',
-        # unit tests
-        # test_suite='test_condor_git_config',
-        # use unittest backport to have subTest etc.
-        # tests_require=['unittest2'] if sys.version_info < (3, 4) else [],
+        extras_require={
+            "test": ["pytest"],
+        },
     )
