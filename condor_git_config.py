@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+"""dynamically configure an HTCondor node from a git repository"""
 import sys
 import os
 import argparse
@@ -11,6 +12,8 @@ import re
 import random
 import filelock
 import zlib
+
+__version__ = "0.1.2"
 
 
 try:
