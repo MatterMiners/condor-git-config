@@ -96,7 +96,7 @@ class ConfigCache(object):
     Cache for configuration files from git
     """
 
-    def __init__(self, git_uri, branch, cache_path, max_age):
+    def __init__(self, git_uri: str, branch: str, cache_path: str, max_age: float):
         self.git_uri = git_uri
         self.branch = branch
         self.cache_path = cache_path
@@ -111,10 +111,10 @@ class ConfigCache(object):
         )
         os.makedirs(self._work_path, exist_ok=True, mode=0o755)
 
-    def abspath(self, *rel_paths):
+    def abspath(self, *rel_paths: str):
         return os.path.abspath(os.path.join(self._work_path, *rel_paths))
 
-    def repo_path(self, *rel_paths):
+    def repo_path(self, *rel_paths: str):
         return self.abspath("repo", *rel_paths)
 
     def __enter__(self):
@@ -198,9 +198,9 @@ class ConfigCache(object):
 
 
 class ConfigSelector(object):
-    def __init__(self, pattern, blacklist, whitelist, recurse):
+    def __init__(self, pattern, blacklist, whitelist, recurse: bool):
         self.pattern = self._prepare_re(pattern)
-        self.blacklist = self._prepare_re(blacklist, "(?!)")
+        self.blacklist = self._prepare_re(blacklist, default="(?!)")
         self.whitelist = self._prepare_re(whitelist)
         self.recurse = recurse
 
@@ -213,7 +213,7 @@ class ConfigSelector(object):
         else:
             return re.compile("|".join("(?:%s)" % piece for piece in pieces))
 
-    def get_paths(self, config_cache):
+    def get_paths(self, config_cache: ConfigCache):
         for rel_path in config_cache:
             if not self.recurse and os.path.dirname(rel_path):
                 continue
@@ -224,7 +224,12 @@ class ConfigSelector(object):
                     yield config_cache.repo_path(rel_path)
 
 
-def include_configs(path_key, config_cache, config_selector, destination=sys.stdout):
+def include_configs(
+    path_key: str,
+    config_cache: ConfigCache,
+    config_selector: ConfigSelector,
+    destination=sys.stdout,
+):
     with config_cache:
         config_cache.refresh()
         print("%s = %s" % (path_key, config_cache.repo_path()), file=destination)
