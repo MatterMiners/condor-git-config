@@ -53,9 +53,9 @@ CLI_CACHE.add_argument(
 )
 CLI_CACHE.add_argument(
     "--max-age",
-    help="seconds before a new update is pulled",
+    help="seconds before a new update is pulled; use inf to disable updates",
     default=300 + random.randint(-10, 10),
-    type=int,
+    type=float,
 )
 CLI_SELECTION = CLI.add_argument_group("configuration selection")
 CLI_SELECTION.add_argument(
