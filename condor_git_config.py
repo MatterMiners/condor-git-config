@@ -121,6 +121,7 @@ class ConfigCache(object):
         return False
 
     def __iter__(self):
+        assert self._cache_lock.is_locked
         # avoid duplicates from links
         seen = set()
         repo_path = self.repo_path()
@@ -139,6 +140,7 @@ class ConfigCache(object):
 
     @property
     def outdated(self):
+        assert self._cache_lock.is_locked
         try:
             with open(self._meta_file, "r") as raw_meta:
                 meta_data = json.load(raw_meta)
@@ -157,6 +159,7 @@ class ConfigCache(object):
                 return meta_data["timestamp"] + self.max_age <= time.time()
 
     def _update_metadata(self):
+        assert self._cache_lock.is_locked
         with open(self._meta_file, "w") as raw_meta:
             json.dump(
                 {
@@ -168,6 +171,7 @@ class ConfigCache(object):
             )
 
     def refresh(self):
+        assert self._cache_lock.is_locked
         if not self.outdated:
             return
         repo_path = self.repo_path()
