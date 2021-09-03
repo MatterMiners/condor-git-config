@@ -102,14 +102,9 @@ class ConfigCache(object):
         self.cache_path = cache_path
         self.max_age = max_age
         self._work_path = os.path.abspath(os.path.join(cache_path, branch))
-        self._meta_file = self.abspath("cache.json")
-        self._cache_lock = filelock.FileLock(
-            os.path.join(
-                "/tmp",
-                ".cache.%s.lock" % zlib.adler32(os.path.basename(__file__).encode()),
-            )
-        )
         os.makedirs(self._work_path, exist_ok=True, mode=0o755)
+        self._meta_file = self.abspath("cache.json")
+        self._cache_lock = filelock.FileLock(self.abspath(f"cache.{branch}.lock"))
 
     def abspath(self, *rel_paths: str):
         return os.path.abspath(os.path.join(self._work_path, *rel_paths))
