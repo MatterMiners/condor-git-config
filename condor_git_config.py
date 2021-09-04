@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 """dynamically configure an HTCondor node from a git repository"""
+from typing import Union
+
 import sys
 import os
 import argparse
@@ -11,7 +13,7 @@ import functools
 import re
 import random
 import filelock
-import zlib
+from pathlib import Path
 
 __version__ = "0.1.2"
 
@@ -49,7 +51,8 @@ CLI_CACHE = CLI.add_argument_group("local configuration cache")
 CLI_CACHE.add_argument(
     "--cache-path",
     help="path to cache configuration file sources",
-    default="/etc/condor/config.git/",
+    default=Path("/etc/condor/config.git/"),
+    type=Path,
 )
 CLI_CACHE.add_argument(
     "--max-age",
@@ -96,20 +99,20 @@ class ConfigCache(object):
     Cache for configuration files from git
     """
 
-    def __init__(self, git_uri: str, branch: str, cache_path: str, max_age: float):
+    def __init__(self, git_uri: str, branch: str, cache_path: Path, max_age: float):
         self.git_uri = git_uri
         self.branch = branch
         self.cache_path = cache_path
         self.max_age = max_age
-        self._work_path = os.path.abspath(os.path.join(cache_path, branch))
-        os.makedirs(self._work_path, exist_ok=True, mode=0o755)
+        self._work_path = cache_path.resolve() / branch
+        self._work_path.mkdir(mode=0o755, parents=True, exist_ok=True)
         self._meta_file = self.abspath("cache.json")
-        self._cache_lock = filelock.FileLock(self.abspath(f"cache.{branch}.lock"))
+        self._cache_lock = filelock.FileLock(str(self.abspath(f"cache.{branch}.lock")))
 
-    def abspath(self, *rel_paths: str):
-        return os.path.abspath(os.path.join(self._work_path, *rel_paths))
+    def abspath(self, *rel_paths: Union[str, Path]) -> Path:
+        return self._work_path.joinpath(*rel_paths)
 
-    def repo_path(self, *rel_paths: str):
+    def repo_path(self, *rel_paths: Union[str, Path]) -> Path:
         return self.abspath("repo", *rel_paths)
 
     def __enter__(self):
@@ -126,17 +129,18 @@ class ConfigCache(object):
         seen = set()
         repo_path = self.repo_path()
         for dir_path, dir_names, file_names in os.walk(repo_path):
-            if ".git" in dir_names:
+            try:
                 dir_names.remove(".git")
-            dir_names[:] = sorted(dir_names)
+            except ValueError:
+                pass
+            dir_names.sort()
+            dir_path = Path(dir_path)
             for file_name in sorted(file_names):
-                rel_path = os.path.normpath(
-                    os.path.relpath(os.path.join(dir_path, file_name), repo_path)
-                )
+                rel_path = (dir_path / file_name).relative_to(repo_path)
                 if rel_path in seen:
                     continue
                 seen.add(rel_path)
-                yield rel_path
+                yield str(rel_path)
 
     @property
     def outdated(self):
@@ -213,13 +217,12 @@ class ConfigSelector(object):
             return re.compile("|".join("(?:%s)" % piece for piece in pieces))
 
     def get_paths(self, config_cache: ConfigCache):
+        pattern, blacklist, whitelist = self.pattern, self.blacklist, self.whitelist
         for rel_path in config_cache:
             if not self.recurse and os.path.dirname(rel_path):
                 continue
-            if self.pattern.search(rel_path):
-                if not self.blacklist.search(rel_path) or self.whitelist.search(
-                    rel_path
-                ):
+            if pattern.search(rel_path):
+                if not blacklist.search(rel_path) or whitelist.search(rel_path):
                     yield config_cache.repo_path(rel_path)
 
 
