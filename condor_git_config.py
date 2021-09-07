@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """dynamically configure an HTCondor node from a git repository"""
-from typing import Union
+from typing import Union, Iterable
 
 import sys
 import os
@@ -123,7 +123,7 @@ class ConfigCache(object):
         self._cache_lock.release()
         return False
 
-    def __iter__(self):
+    def __iter__(self) -> Iterable[Path]:
         assert self._cache_lock.is_locked
         # avoid duplicates from links
         seen = set()
@@ -140,7 +140,7 @@ class ConfigCache(object):
                 if rel_path in seen:
                     continue
                 seen.add(rel_path)
-                yield str(rel_path)
+                yield rel_path
 
     @property
     def outdated(self):
@@ -201,6 +201,10 @@ class ConfigCache(object):
 
 
 class ConfigSelector(object):
+    """
+    Selector for a configuration file iterator
+    """
+
     def __init__(self, pattern, blacklist, whitelist, recurse: bool):
         self.pattern = self._prepare_re(pattern)
         self.blacklist = self._prepare_re(blacklist, default="(?!)")
@@ -208,7 +212,7 @@ class ConfigSelector(object):
         self.recurse = recurse
 
     @staticmethod
-    def _prepare_re(pieces, default=".*"):
+    def _prepare_re(pieces, default=".*") -> re.Pattern:
         if not pieces:
             return re.compile(default)
         if len(pieces) == 1:
@@ -216,13 +220,14 @@ class ConfigSelector(object):
         else:
             return re.compile("|".join("(?:%s)" % piece for piece in pieces))
 
-    def get_paths(self, config_cache: ConfigCache):
+    def get_paths(self, config_cache: ConfigCache) -> Iterable[Path]:
         pattern, blacklist, whitelist = self.pattern, self.blacklist, self.whitelist
         for rel_path in config_cache:
-            if not self.recurse and os.path.dirname(rel_path):
+            if not self.recurse and rel_path.parent != Path('.'):
                 continue
-            if pattern.search(rel_path):
-                if not blacklist.search(rel_path) or whitelist.search(rel_path):
+            str_path = str(rel_path)
+            if pattern.search(str_path):
+                if not blacklist.search(str_path) or whitelist.search(str_path):
                     yield config_cache.repo_path(rel_path)
 
 
