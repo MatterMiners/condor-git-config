@@ -110,6 +110,13 @@ class ConfigCache(object):
         self._cache_lock = filelock.FileLock(str(self.abspath(f"cache.{branch}.lock")))
         self._config_meta: Optional[Dict[str, Any]] = None
 
+    @property
+    def stats(self):
+        """Statistics of the cache"""
+        meta = self._config_meta if self._config_meta is not None else self._read_meta()
+        age = time.time() - meta["timestamp"]
+        return {"age": age, "pulls": meta["pulls"], "reads": meta["reads"]}
+
     def _read_meta(self):
         try:
             with open(self._meta_file, "r") as meta_stream:
@@ -118,7 +125,7 @@ class ConfigCache(object):
             return {
                 "git_uri": self.git_uri,
                 "branch": self.branch,
-                "timestamp": 0,
+                "timestamp": 0.0,
                 "pulls": 0,
                 "reads": 0,
             }
@@ -233,6 +240,7 @@ def include_configs(
     destination=sys.stdout,
 ):
     with config_cache:
+        print("#", json.dumps(config_cache.stats))
         print("%s = %s" % (path_key, config_cache.repo_path()), file=destination)
         for config_path in config_selector.get_paths(config_cache):
             print("include : %s" % config_path, file=destination)

@@ -32,14 +32,15 @@ def test_includes():
             "--path-key",
             "CHECKOUT_ROOT",
         ]
-        initial = subprocess.check_output(command)
-        refresh = subprocess.check_output(command)
-        assert initial == refresh
-        assert b"CHECKOUT_ROOT" in initial
+        initial = subprocess.check_output(command).splitlines()
+        refresh = subprocess.check_output(command).splitlines()
+        assert initial[:1] != refresh[:1]
+        assert initial[1:] == refresh[1:]
+        assert b"CHECKOUT_ROOT" in b"\n".join(initial)
         root = next(
             line.partition(b"=")[-1].strip()
-            for line in initial.splitlines()
+            for line in initial[1:]
             if b"CHECKOUT_ROOT" in line
         )
         expected_include = b"include : %s/condor_git_config.py" % root
-        assert expected_include in initial.splitlines()
+        assert expected_include in initial[1:]
