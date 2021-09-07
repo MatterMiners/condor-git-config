@@ -187,7 +187,7 @@ class ConfigCache(object):
             return
         repo_path = self.repo_path()
         self._config_meta["pulls"] += 1
-        if not os.path.exists(os.path.join(repo_path, ".git")):
+        if not self.repo_path(".git").exists():
             branch = [] if not self.branch else ["--branch", self.branch]
             subprocess.check_output(
                 ["git", "clone", "--quiet", *branch, self.git_uri, str(repo_path)],
@@ -196,10 +196,14 @@ class ConfigCache(object):
             )
             self._config_meta["timestamp"] = time.time()
         else:
-            subprocess.check_output(
-                ["git", "pull"], timeout=30, cwd=repo_path, universal_newlines=True
-            )
-        self._config_meta["timestamp"] = time.time()
+            try:
+                subprocess.check_output(
+                    ["git", "pull"], timeout=30, cwd=repo_path, universal_newlines=True
+                )
+            except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+                pass
+            else:
+                self._config_meta["timestamp"] = time.time()
 
 
 class ConfigSelector(object):
