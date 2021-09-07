@@ -156,7 +156,6 @@ class ConfigCache(object):
 
     def __iter__(self) -> Iterable[Path]:
         assert self._config_meta is not None
-        self._config_meta["reads"] += 1
         # avoid duplicates from links
         seen = set()
         repo_path = self.repo_path()
@@ -176,6 +175,7 @@ class ConfigCache(object):
 
     def _refresh(self):
         assert self._config_meta is not None
+        self._config_meta["reads"] += 1
         if self._config_meta["timestamp"] + self.max_age > time.time():
             return
         repo_path = self.repo_path()
