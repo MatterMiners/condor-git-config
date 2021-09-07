@@ -3,6 +3,7 @@ import tempfile
 import shutil
 import pathlib
 import sys
+import json
 
 
 REPO_URL = "https://github.com/MatterMiners/condor-git-config.git"
@@ -44,3 +45,24 @@ def test_includes():
         )
         expected_include = b"include : %s/condor_git_config.py" % root
         assert expected_include in initial[1:]
+
+
+def test_refresh():
+    with tempfile.TemporaryDirectory() as cache:
+        command = [
+            *EXECUTABLE,
+            REPO_URL,
+            "--cache-path",
+            cache,
+            "--pattern",
+            r".*\.py",
+            "--path-key",
+            "CHECKOUT_ROOT",
+        ]
+        previous_meta = json.loads(subprocess.check_output(command).splitlines()[0][1:])
+        for refresh in range(5):
+            new_meta = json.loads(subprocess.check_output(command).splitlines()[0][1:])
+            assert new_meta["age"] > previous_meta["age"]
+            assert new_meta["reads"] == previous_meta["reads"] + 1
+            assert new_meta["pulls"] == previous_meta["pulls"]
+            previous_meta = new_meta
