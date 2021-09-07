@@ -145,6 +145,7 @@ class ConfigCache(object):
     def __enter__(self):
         self._cache_lock.acquire()
         self._config_meta = self._read_meta()
+        self._refresh()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -173,7 +174,7 @@ class ConfigCache(object):
                 seen.add(rel_path)
                 yield rel_path
 
-    def refresh(self):
+    def _refresh(self):
         assert self._config_meta is not None
         if self._config_meta["timestamp"] + self.max_age > time.time():
             return
@@ -232,7 +233,6 @@ def include_configs(
     destination=sys.stdout,
 ):
     with config_cache:
-        config_cache.refresh()
         print("%s = %s" % (path_key, config_cache.repo_path()), file=destination)
         for config_path in config_selector.get_paths(config_cache):
             print("include : %s" % config_path, file=destination)
