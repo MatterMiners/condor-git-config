@@ -60,7 +60,7 @@ def test_refresh():
             "CHECKOUT_ROOT",
         ]
         previous_meta = json.loads(subprocess.check_output(command).splitlines()[0][1:])
-        for refresh in range(5):
+        for _ in range(5):
             new_meta = json.loads(subprocess.check_output(command).splitlines()[0][1:])
             assert new_meta["age"] > previous_meta["age"]
             assert new_meta["reads"] == previous_meta["reads"] + 1
