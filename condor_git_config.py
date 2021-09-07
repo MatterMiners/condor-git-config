@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """dynamically configure an HTCondor node from a git repository"""
-from typing import Union, Iterable
+from typing import Union, Iterable, Optional, Dict, Any
 
 import sys
 import os
@@ -108,6 +108,33 @@ class ConfigCache(object):
         self._work_path.mkdir(mode=0o755, parents=True, exist_ok=True)
         self._meta_file = self.abspath("cache.json")
         self._cache_lock = filelock.FileLock(str(self.abspath(f"cache.{branch}.lock")))
+        self._config_meta: Optional[Dict[str, Any]] = None
+
+    def _read_meta(self):
+        try:
+            with open(self._meta_file, "r") as meta_stream:
+                meta_data = json.load(meta_stream)
+        except FileNotFoundError:
+            return {
+                "git_uri": self.git_uri,
+                "branch": self.branch,
+                "timestamp": 0,
+                "pulls": 0,
+                "reads": 0,
+            }
+        else:
+            if meta_data["git_uri"] != self.git_uri:
+                LOGGER.critical("cache %r corrupted by other hook: %r", self, meta_data)
+                raise RuntimeError(
+                    "config cache %r used for conflicting hooks" % self.cache_path
+                )
+            return meta_data
+
+    def _write_meta(self):
+        if self._config_meta is None:
+            return
+        with open(self._meta_file, "w") as meta_stream:
+            json.dump(self._config_meta, meta_stream)
 
     def abspath(self, *rel_paths: Union[str, Path]) -> Path:
         return self._work_path.joinpath(*rel_paths)
@@ -117,9 +144,12 @@ class ConfigCache(object):
 
     def __enter__(self):
         self._cache_lock.acquire()
+        self._config_meta = self._read_meta()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self._write_meta()
+        self._config_meta = None
         self._cache_lock.release()
         return False
 
@@ -142,54 +172,19 @@ class ConfigCache(object):
                 seen.add(rel_path)
                 yield rel_path
 
-    @property
-    def outdated(self):
-        assert self._cache_lock.is_locked
-        try:
-            with open(self._meta_file, "r") as raw_meta:
-                meta_data = json.load(raw_meta)
-        except FileNotFoundError:
-            return True
-        else:
-            if (
-                meta_data["git_uri"] != self.git_uri
-                or meta_data["branch"] != self.branch
-            ):
-                LOGGER.critical("cache %r corrupted by other hook: %r", self, meta_data)
-                raise RuntimeError(
-                    "config cache %r used for conflicting hooks" % self.cache_path
-                )
-            else:
-                return meta_data["timestamp"] + self.max_age <= time.time()
-
     def _update_metadata(self):
-        assert self._cache_lock.is_locked
-        with open(self._meta_file, "w") as raw_meta:
-            json.dump(
-                {
-                    "git_uri": self.git_uri,
-                    "branch": self.branch,
-                    "timestamp": time.time(),
-                },
-                raw_meta,
-            )
+        assert self._config_meta is not None
+        self._config_meta["timestamp"] = time.time()
 
     def refresh(self):
-        assert self._cache_lock.is_locked
-        if not self.outdated:
+        assert self._config_meta is not None
+        if self._config_meta["timestamp"] + self.max_age > time.time():
             return
         repo_path = self.repo_path()
         if not os.path.exists(os.path.join(repo_path, ".git")):
+            branch = [] if not self.branch else ["--branch", self.branch]
             subprocess.check_output(
-                [
-                    "git",
-                    "clone",
-                    "--quiet",
-                    "--branch",
-                    str(self.branch),
-                    str(self.git_uri),
-                    repo_path,
-                ],
+                ["git", "clone", "--quiet", *branch, self.git_uri, str(repo_path)],
                 timeout=30,
                 universal_newlines=True,
             )
@@ -223,7 +218,7 @@ class ConfigSelector(object):
     def get_paths(self, config_cache: ConfigCache) -> Iterable[Path]:
         pattern, blacklist, whitelist = self.pattern, self.blacklist, self.whitelist
         for rel_path in config_cache:
-            if not self.recurse and rel_path.parent != Path('.'):
+            if not self.recurse and rel_path.parent != Path("."):
                 continue
             str_path = str(rel_path)
             if pattern.search(str_path):
