@@ -20,4 +20,4 @@ jobs:
         flake8 condor_git_config.py tests
     - name: Format with black
       run: |
-        black bootpeg tests --diff --check
+        black condor_git_config.py tests --diff --check
