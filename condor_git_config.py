@@ -218,7 +218,7 @@ class ConfigSelector(object):
         self.recurse = recurse
 
     @staticmethod
-    def _prepare_re(pieces, default=".*") -> re.Pattern:
+    def _prepare_re(pieces, default=".*") -> "re.Pattern":
         if not pieces:
             return re.compile(default)
         if len(pieces) == 1:
