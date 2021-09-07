@@ -154,7 +154,8 @@ class ConfigCache(object):
         return False
 
     def __iter__(self) -> Iterable[Path]:
-        assert self._cache_lock.is_locked
+        assert self._config_meta is not None
+        self._config_meta["reads"] += 1
         # avoid duplicates from links
         seen = set()
         repo_path = self.repo_path()
@@ -172,15 +173,12 @@ class ConfigCache(object):
                 seen.add(rel_path)
                 yield rel_path
 
-    def _update_metadata(self):
-        assert self._config_meta is not None
-        self._config_meta["timestamp"] = time.time()
-
     def refresh(self):
         assert self._config_meta is not None
         if self._config_meta["timestamp"] + self.max_age > time.time():
             return
         repo_path = self.repo_path()
+        self._config_meta["pulls"] += 1
         if not os.path.exists(os.path.join(repo_path, ".git")):
             branch = [] if not self.branch else ["--branch", self.branch]
             subprocess.check_output(
@@ -188,11 +186,12 @@ class ConfigCache(object):
                 timeout=30,
                 universal_newlines=True,
             )
+            self._config_meta["timestamp"] = time.time()
         else:
             subprocess.check_output(
                 ["git", "pull"], timeout=30, cwd=repo_path, universal_newlines=True
             )
-        self._update_metadata()
+        self._config_meta["timestamp"] = time.time()
 
 
 class ConfigSelector(object):
