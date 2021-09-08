@@ -184,7 +184,7 @@ class ConfigCache(object):
         assert self._config_meta is not None
         self._config_meta["reads"] += 1
         if self._config_meta["timestamp"] + self.max_age > time.time():
-            return
+            return  # early exit as ConfigCache is still valid
         repo_path = self.repo_path()
         self._config_meta["pulls"] += 1
         if not self.repo_path(".git").exists():
