@@ -164,7 +164,6 @@ class ConfigCache(object):
     def __iter__(self) -> Iterable[Path]:
         assert self._config_meta is not None
         # avoid duplicates from links
-        seen = set()
         repo_path = self.repo_path()
         for dir_path, dir_names, file_names in os.walk(repo_path):
             try:
@@ -175,9 +174,6 @@ class ConfigCache(object):
             dir_path = Path(dir_path)
             for file_name in sorted(file_names):
                 rel_path = (dir_path / file_name).relative_to(repo_path)
-                if rel_path in seen:
-                    continue
-                seen.add(rel_path)
                 yield rel_path
 
     def _refresh(self):
