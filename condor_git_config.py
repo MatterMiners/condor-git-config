@@ -165,13 +165,13 @@ class ConfigCache(object):
         assert self._config_meta is not None
         # avoid duplicates from links
         repo_path = self.repo_path()
-        for dir_path, dir_names, file_names in os.walk(repo_path):
+        for base_dir, dir_names, file_names in os.walk(repo_path):
             try:
                 dir_names.remove(".git")
             except ValueError:
                 pass
             dir_names.sort()
-            dir_path = Path(dir_path)
+            dir_path = Path(base_dir)
             for file_name in sorted(file_names):
                 rel_path = (dir_path / file_name).relative_to(repo_path)
                 yield rel_path
