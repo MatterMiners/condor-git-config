@@ -247,9 +247,9 @@ def include_configs(
 ):
     with config_cache:
         print("#", json.dumps(config_cache.stats), file=destination)
-        print("%s = %s" % (path_key, config_cache.repo_path()), file=destination)
+        print(f"{path_key} = {config_cache.repo_path()}", file=destination)
         for config_path in config_selector.get_paths(config_cache):
-            print("include : %s" % config_path, file=destination)
+            print(f"include : {config_path}", file=destination)
 
 
 def main():
