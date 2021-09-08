@@ -133,7 +133,7 @@ class ConfigCache(object):
             if meta_data["git_uri"] != self.git_uri:
                 LOGGER.critical("cache %r corrupted by other hook: %r", self, meta_data)
                 raise RuntimeError(
-                    "config cache %r used for conflicting hooks" % self.cache_path
+                    f"config cache {self.cache_path!r} used for conflicting hooks"
                 )
             return meta_data
 
@@ -226,7 +226,7 @@ class ConfigSelector(object):
         if len(pieces) == 1:
             return re.compile(pieces[0])
         else:
-            return re.compile("|".join("(?:%s)" % piece for piece in pieces))
+            return re.compile("|".join(f"(?:{piece})" for piece in pieces))
 
     def get_paths(self, config_cache: ConfigCache) -> Iterator[Path]:
         pattern, blacklist, whitelist = self.pattern, self.blacklist, self.whitelist
