@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """dynamically configure an HTCondor node from a git repository"""
-from typing import Union, List, Iterable, Optional, Dict, Any
+from typing import Union, List, Iterator, Optional, Dict, Any
 
 import sys
 import os
@@ -161,7 +161,7 @@ class ConfigCache(object):
         self._cache_lock.release()
         return False
 
-    def __iter__(self) -> Iterable[Path]:
+    def __iter__(self) -> Iterator[Path]:
         assert self._config_meta is not None
         # avoid duplicates from links
         repo_path = self.repo_path()
@@ -228,7 +228,7 @@ class ConfigSelector(object):
         else:
             return re.compile("|".join("(?:%s)" % piece for piece in pieces))
 
-    def get_paths(self, config_cache: ConfigCache) -> Iterable[Path]:
+    def get_paths(self, config_cache: ConfigCache) -> Iterator[Path]:
         pattern, blacklist, whitelist = self.pattern, self.blacklist, self.whitelist
         for rel_path in config_cache:
             if not self.recurse and rel_path.parent != Path("."):
