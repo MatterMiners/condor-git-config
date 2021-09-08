@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """dynamically configure an HTCondor node from a git repository"""
-from typing import Union, Iterable, Optional, Dict, Any
+from typing import Union, List, Iterable, Optional, Dict, Any
 
 import sys
 import os
@@ -207,7 +207,13 @@ class ConfigSelector(object):
     Selector for a configuration file iterator
     """
 
-    def __init__(self, pattern, blacklist, whitelist, recurse: bool):
+    def __init__(
+        self,
+        pattern: List[str],
+        blacklist: List[str],
+        whitelist: List[str],
+        recurse: bool,
+    ):
         self.pattern = self._prepare_re(pattern)
         self.blacklist = self._prepare_re(blacklist, default="(?!)")
         self.whitelist = self._prepare_re(whitelist)
