@@ -26,6 +26,8 @@ test = [
     "flake8",
     "flake8-bugbear",
     "black; implementation_name=='cpython'",
+    "mypy; implementation_name=='cpython'",
+    "types-filelock; implementation_name=='cpython'",
 ]
 
 [tool.black]

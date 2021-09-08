@@ -21,3 +21,6 @@ jobs:
     - name: Format with black
       run: |
         black condor_git_config.py tests --diff --check
+    - name: Check with mypy
+      run: |
+        python -m mypy condor_git_config.py
