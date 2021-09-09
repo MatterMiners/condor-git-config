@@ -1,3 +1,43 @@
+[project]
+name = "condor_git_config"
+authors = [
+    {name = "Max Fischer", email = "maxfischer2781@gmail.com"},
+]
+readme = "README.rst"
+classifiers = [
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3 :: Only",
+]
+keywords = ["htcondor", "condor", "configuration"]
+requires-python = ">=3.6"
+dynamic = ['version', 'description']
+dependencies = ["filelock"]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "flake8",
+    "flake8-bugbear",
+    "black; implementation_name=='cpython'",
+    "mypy; implementation_name=='cpython'",
+    "types-filelock; implementation_name=='cpython'",
+]
+
+[project.urls]
+Source = "https://github.com/matterminers/condor-git-config"
+
+[project.scripts]
+condor-git-config = "condor_git_config:main"
+
+[build-system]
+requires = ["flit_core ~=3.2"]
+build-backend = "flit_core.buildapi"
+
+[tool.black]
+target-version = ["py36"]
+
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-ra -q"
