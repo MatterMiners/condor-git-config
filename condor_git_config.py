@@ -106,7 +106,6 @@ class ConfigCache(object):
         self.max_age = max_age
         self._work_path = cache_path.resolve() / branch
         self._work_path.mkdir(mode=0o755, parents=True, exist_ok=True)
-        self._meta_file = self.abspath("cache.json")
         self._cache_lock = filelock.FileLock(str(self.abspath(f"cache.{branch}.lock")))
         self._config_meta: Optional[Dict[str, Any]] = None
 
@@ -119,7 +118,7 @@ class ConfigCache(object):
 
     def _read_meta(self):
         try:
-            with open(self._meta_file, "r") as meta_stream:
+            with open(self.abspath("cache.json"), "r") as meta_stream:
                 meta_data = json.load(meta_stream)
         except FileNotFoundError:
             return {
@@ -140,8 +139,11 @@ class ConfigCache(object):
     def _write_meta(self):
         if self._config_meta is None:
             return
-        with open(self._meta_file, "w") as meta_stream:
+        # write to a temporary file to avoid corrupting the metadata on failure
+        temp_path, meta_path = map(self.abspath, ("cache.json.tmp", "cache.json"))
+        with open(temp_path, "w") as meta_stream:
             json.dump(self._config_meta, meta_stream)
+        os.replace(temp_path, meta_path)
 
     def abspath(self, *rel_paths: Union[str, Path]) -> Path:
         return self._work_path.joinpath(*rel_paths)
