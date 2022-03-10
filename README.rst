@@ -19,7 +19,7 @@ To integrate the hook, use the ``include command`` syntax in any HTCondor config
 
     include command : condor-git-config https://git.mydomain.com/condor-repos/condor-configs.git
 
-.. note::  Any arguments in ``include command`` are passed directly to the program, without evoking a shell.
+.. note::  Any arguments in ``include command`` are passed directly to the program, without invoking a shell.
            This means that escapes and quotes required for passing arguments on the shell must **not**
            be used in the configuration.
 
@@ -46,24 +46,6 @@ Current development version
 
     git clone https://github.com/maxfischer2781/condor-git-config.git
     ./condor-git-config/setup.py install
-
-Argument Files
---------------
-
-The ``condor-git-config`` executable can use the ``@``
-`prefix character <https://docs.python.org/3/library/argparse.html#fromfile-prefix-chars>`_
-to read arguments from files.
-This allows you to prepare options externally
-
-.. code:: bash
-
-    echo $(hostname -d) >> /etc/mycloud/domain
-
-and have them used dynamically to adjust configuration
-
-.. code::
-
-    include command : condor-git-config --branch @/etc/mycloud/domain -- https://git.mydomain.com/condor-repos/condor-configs.git
 
 Configuration Recursion
 -----------------------
@@ -96,3 +78,21 @@ This allows you to further include the files in ``aaaron-cloud`` by using ``incl
     # aaaron-cloud.cfg
     include : $(GIT_CONFIG_CACHE_PATH)/overwrites.cfg
     include : $(GIT_CONFIG_CACHE_PATH)/proxy.cfg
+
+Argument Files
+--------------
+
+The ``condor-git-config`` executable can use the ``@``
+`prefix character <https://docs.python.org/3/library/argparse.html#fromfile-prefix-chars>`_
+to read arguments from files.
+This allows you to prepare options externally
+
+.. code:: bash
+
+    echo $(hostname -d) >> /etc/mycloud/domain
+
+and have them used dynamically to adjust configuration
+
+.. code::
+
+    include command : condor-git-config --branch @/etc/mycloud/domain -- https://git.mydomain.com/condor-repos/condor-configs.git
