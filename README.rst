@@ -47,10 +47,28 @@ Current development version
     git clone https://github.com/maxfischer2781/condor-git-config.git
     ./condor-git-config/setup.py install
 
-Configuration Recursion
+We recommend to install the hook to a
+`virtual environment <https://docs.python.org/3/library/venv.html>`_.
+However, the hook is simple enough to not disturb global environments.
+
+Configuration Selection
 -----------------------
 
 By default, ``condor-git-config`` will not recurse into sub-directories.
+Only top-level files that end in ``.cfg`` are included automatically.
+
+Which files to use can be controlled by arguments that provide regular expression
+patterns to include/exclude files and whether to recurse into directories.
+
+In addition, an HTCondor macro is created that points to the root path of the cache.
+This allows top-level files to easily ``include:`` files from sub-directories.
+
+Conditional Inclusion
+:::::::::::::::::::::
+
+Use ``--blacklist`` to exclude files by relative name and
+``--whitelist`` to add exceptions to blacklisted names.
+
 This allows you to have additional configuration, which is conditionally integrated.
 For example, consider the following git repository tree:
 
@@ -69,15 +87,18 @@ You can conditionally include the ``*-cloud.cfg`` files like this:
 
 .. code:: bash
 
-    --blacklist '.-cloud\.cfg' --whitelist @/etc/mycloud/flavour
+    --blacklist '.*-cloud\.cfg' --whitelist 'aaaron-cloud\.cfg'
 
 This allows you to further include the files in ``aaaron-cloud`` by using ``include`` in ``aaaron-cloud.cfg``:
 
 .. code::
 
     # aaaron-cloud.cfg
-    include : $(GIT_CONFIG_CACHE_PATH)/overwrites.cfg
-    include : $(GIT_CONFIG_CACHE_PATH)/proxy.cfg
+    include : $(GIT_CONFIG_CACHE_PATH)/aaaron-cloud/overwrites.cfg
+    include : $(GIT_CONFIG_CACHE_PATH)/aaaron-cloud/proxy.cfg
+
+This pattern is especially useful when the whitelist is set dynamically,
+e.g. by using an argument file that contains the domain name.
 
 Argument Files
 --------------
@@ -89,10 +110,12 @@ This allows you to prepare options externally
 
 .. code:: bash
 
-    echo $(hostname -d) >> /etc/mycloud/domain
+    $ cat /etc/condor-git-config/branch
+    --branch
+    aaaron-cloud
 
 and have them used dynamically to adjust configuration
 
 .. code::
 
-    include command : condor-git-config --branch @/etc/mycloud/domain -- https://git.mydomain.com/condor-repos/condor-configs.git
+    include command : condor-git-config @/etc/condor-git-config/branch -- https://git.mydomain.com/condor-repos/condor-configs.git
