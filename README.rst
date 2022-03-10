@@ -44,8 +44,7 @@ Current development version
 
 .. code:: bash
 
-    git clone https://github.com/maxfischer2781/condor-git-config.git
-    ./condor-git-config/setup.py install
+    pip3 install git+https://github.com/MatterMiners/condor-git-config.git
 
 We recommend to install the hook to a
 `virtual environment <https://docs.python.org/3/library/venv.html>`_.
