@@ -196,7 +196,10 @@ class ConfigCache(object):
         else:
             try:
                 subprocess.check_output(
-                    ["git", "pull"], timeout=30, cwd=repo_path, universal_newlines=True
+                    ["git", "pull", "--ff-only"],
+                    timeout=30,
+                    cwd=repo_path,
+                    universal_newlines=True,
                 )
             except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
                 pass
